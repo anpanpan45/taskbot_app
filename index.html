@@ -4,32 +4,42 @@
   <meta charset="UTF-8">
   <title>タスク登録</title>
 
-  <!-- ★ PWA & フルスクリーン化のための特化タグ群 -->
+  <!-- PWA & フルスクリーン化特化メタタグ -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tasks">
   
-  <!-- アプリアイコン（Google Driveのサムネイルを流用） -->
+  <!-- アプリアイコン -->
   <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1hQr4A0BmZ23C-Z_PJ3L3mJxXlbOPFcpX&sz=w512">
 
   <style>
-    /* ベース設定：iOSのセーフエリア（ノッチ）対応 */
+    /* 全要素のボックスサイズを厳格固定 */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* iOSの動的画面高さ（100dvh）とバウンススクロール完全ロック */
     body {
       margin: 0; padding: 0;
-      padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
+      height: 100dvh;
+      min-height: 100dvh;
+      overflow: hidden;
+      overscroll-behavior: none;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #1a241c; 
       color: #e8ede9; 
-      height: 100vh; overflow: hidden; 
-      display: flex; flex-direction: column;
-      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      flex-direction: column;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
     }
     
+    /* ヘッダーバナー（1画面完結のため高さを120pxに最適化） */
     .header-banner {
       width: 100%;
-      height: 140px;
+      height: 120px;
       background-image: url('https://drive.google.com/thumbnail?id=1hQr4A0BmZ23C-Z_PJ3L3mJxXlbOPFcpX&sz=w2000');
       background-size: cover;
       background-position: center;
@@ -38,42 +48,57 @@
       background-color: #263629;
     }
     
+    /* フォーム領域：スクロールなしで収まる黄金比ギャップ */
     .container {
-      padding: 20px; flex: 1;
-      display: flex; flex-direction: column; gap: 16px;
-      overflow-y: auto;
+      padding: 16px 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      justify-content: flex-start;
     }
 
-    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group { display: flex; flex-direction: column; gap: 4px; }
     label { font-size: 13px; font-weight: bold; color: #a4bba8; }
     
     input[type="text"], input[type="date"], input[type="datetime-local"], input[type="file"] {
-      width: 100%; max-width: 100%; min-width: 0;
-      box-sizing: border-box; -webkit-appearance: none; margin: 0; 
-      padding: 12px; font-size: 16px;
-      border: 1px solid #3a4f40; border-radius: 8px;
-      background-color: #263629; color: #e8ede9; color-scheme: dark; 
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 16px;
+      border: 1px solid #3a4f40;
+      border-radius: 8px;
+      background-color: #263629;
+      color: #e8ede9;
+      color-scheme: dark; 
     }
     input::placeholder { color: #6d8573; }
-    #file-status { font-size: 13px; color: #d4af37; margin-top: 4px; }
+    #file-status { font-size: 12px; color: #d4af37; margin-top: 2px; }
     
     .radio-group {
-      display: flex; gap: 12px; align-items: center; justify-content: space-around;
-      background: #263629; padding: 12px; border-radius: 8px; border: 1px solid #3a4f40;
+      display: flex; gap: 10px; align-items: center; justify-content: space-around;
+      background: #263629; padding: 10px; border-radius: 8px; border: 1px solid #3a4f40;
     }
-    .radio-group label { font-size: 15px; color: #e8ede9; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .radio-group label { font-size: 14px; color: #e8ede9; display: flex; align-items: center; gap: 6px; cursor: pointer; }
     
+    /* 見切れを完全解消したボタン配置 */
     button {
-      margin-top: auto; margin-bottom: 20px;
-      width: 100%; padding: 16px;
+      margin-top: auto;
+      margin-bottom: max(12px, env(safe-area-inset-bottom));
+      width: 100%;
+      padding: 15px;
       background-color: #2b3d30; 
       color: #e8ede9; 
-      font-size: 18px; font-weight: bold;
+      font-size: 17px;
+      font-weight: bold;
       border: 1px solid #4a6351; 
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-      cursor: pointer; transition: 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
     button:active { background-color: #213025; transform: scale(0.98); }
     button:disabled { background-color: #1a241c; color: #6d8573; box-shadow: none; border-color: #263629; }
@@ -133,7 +158,7 @@
   </div>
 
   <script>
-    // ★ 注入済み：Google Apps Script Web App API エンドポイント
+    // デプロイ済みGAS APIエンドポイント
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxpw5uUgxPUsoTdHj56FOAaznOJpgpUnGft62xlZ6x_g-vhyG3NEfVvMSXCalsWjj9wTA/exec";
 
     const typeAllday = document.getElementById('type-allday');
