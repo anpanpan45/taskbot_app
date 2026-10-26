@@ -20,12 +20,10 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* iOSの動的画面高さ（100dvh）とバウンススクロール完全ロック */
     body {
       margin: 0; padding: 0;
-      height: 100dvh;
       min-height: 100dvh;
-      overflow: hidden;
+      overflow-y: auto;
       overscroll-behavior: none;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #1a241c; 
@@ -36,7 +34,6 @@
       padding-bottom: env(safe-area-inset-bottom);
     }
     
-    /* ヘッダーバナー（1画面完結のため高さを120pxに最適化） */
     .header-banner {
       width: 100%;
       height: 120px;
@@ -48,21 +45,32 @@
       background-color: #263629;
     }
     
-    /* フォーム領域：スクロールなしで収まる黄金比ギャップ */
+    /* フォーム領域：上部にギュッとまとめる設計 */
     .container {
       padding: 16px 20px;
-      flex: 1;
       display: flex;
       flex-direction: column;
       gap: 12px;
-      justify-content: flex-start;
+      width: 100%;
+      max-width: 100%;
     }
 
-    .input-group { display: flex; flex-direction: column; gap: 4px; }
+    .input-group { 
+      display: flex; 
+      flex-direction: column; 
+      gap: 4px;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
+    }
     label { font-size: 13px; font-weight: bold; color: #a4bba8; }
     
+    /* 入力フォーム共通：iOS Safariの横幅突き抜けを完全矯正 */
     input[type="text"], input[type="date"], input[type="datetime-local"], input[type="file"] {
+      display: block;
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
       padding: 11px 12px;
       font-size: 16px;
       border: 1px solid #3a4f40;
@@ -70,6 +78,8 @@
       background-color: #263629;
       color: #e8ede9;
       color-scheme: dark; 
+      -webkit-appearance: none;
+      appearance: none;
     }
     input::placeholder { color: #6d8573; }
     #file-status { font-size: 12px; color: #d4af37; margin-top: 2px; }
@@ -77,13 +87,14 @@
     .radio-group {
       display: flex; gap: 10px; align-items: center; justify-content: space-around;
       background: #263629; padding: 10px; border-radius: 8px; border: 1px solid #3a4f40;
+      width: 100%;
     }
     .radio-group label { font-size: 14px; color: #e8ede9; display: flex; align-items: center; gap: 6px; cursor: pointer; }
     
-    /* 見切れを完全解消したボタン配置 */
+    /* ★ 添付ファイルのすぐ下にピタリと配置 */
     button {
-      margin-top: auto;
-      margin-bottom: max(12px, env(safe-area-inset-bottom));
+      margin-top: 8px;
+      margin-bottom: 24px;
       width: 100%;
       padding: 15px;
       background-color: #2b3d30; 
@@ -152,13 +163,13 @@
       <div id="file-status"></div>
     </div>
 
+    <!-- 添付ファイルの直下に配置された登録ボタン -->
     <button id="submit-btn" onclick="processAndSubmit()">
       <span class="white-fan">🪭</span> カレンダーへ登録
     </button>
   </div>
 
   <script>
-    // デプロイ済みGAS APIエンドポイント
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxpw5uUgxPUsoTdHj56FOAaznOJpgpUnGft62xlZ6x_g-vhyG3NEfVvMSXCalsWjj9wTA/exec";
 
     const typeAllday = document.getElementById('type-allday');
