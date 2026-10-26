@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>タスク登録</title>
+
+  <!-- ★ PWA & フルスクリーン化のための特化タグ群 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tasks">
+  
+  <!-- アプリアイコン（Google Driveのサムネイルを流用） -->
+  <link rel="apple-touch-icon" href="https://drive.google.com/thumbnail?id=1hQr4A0BmZ23C-Z_PJ3L3mJxXlbOPFcpX&sz=w512">
+
+  <style>
+    /* ベース設定：iOSのセーフエリア（ノッチ）対応 */
+    body {
+      margin: 0; padding: 0;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #1a241c; 
+      color: #e8ede9; 
+      height: 100vh; overflow: hidden; 
+      display: flex; flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .header-banner {
+      width: 100%;
+      height: 140px;
+      background-image: url('https://drive.google.com/thumbnail?id=1hQr4A0BmZ23C-Z_PJ3L3mJxXlbOPFcpX&sz=w2000');
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
+      box-shadow: inset 0 -20px 20px -10px #1a241c;
+      background-color: #263629;
+    }
+    
+    .container {
+      padding: 20px; flex: 1;
+      display: flex; flex-direction: column; gap: 16px;
+      overflow-y: auto;
+    }
+
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 13px; font-weight: bold; color: #a4bba8; }
+    
+    input[type="text"], input[type="date"], input[type="datetime-local"], input[type="file"] {
+      width: 100%; max-width: 100%; min-width: 0;
+      box-sizing: border-box; -webkit-appearance: none; margin: 0; 
+      padding: 12px; font-size: 16px;
+      border: 1px solid #3a4f40; border-radius: 8px;
+      background-color: #263629; color: #e8ede9; color-scheme: dark; 
+    }
+    input::placeholder { color: #6d8573; }
+    #file-status { font-size: 13px; color: #d4af37; margin-top: 4px; }
+    
+    .radio-group {
+      display: flex; gap: 12px; align-items: center; justify-content: space-around;
+      background: #263629; padding: 12px; border-radius: 8px; border: 1px solid #3a4f40;
+    }
+    .radio-group label { font-size: 15px; color: #e8ede9; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    
+    button {
+      margin-top: auto; margin-bottom: 20px;
+      width: 100%; padding: 16px;
+      background-color: #2b3d30; 
+      color: #e8ede9; 
+      font-size: 18px; font-weight: bold;
+      border: 1px solid #4a6351; 
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+      cursor: pointer; transition: 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    button:active { background-color: #213025; transform: scale(0.98); }
+    button:disabled { background-color: #1a241c; color: #6d8573; box-shadow: none; border-color: #263629; }
+    
+    .white-fan { display: inline-block; filter: grayscale(100%) brightness(500%); }
+    
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(0.98); background-color: #1d2b21; }
+      100% { transform: scale(1); }
+    }
+    .sending { animation: pulse 1.5s infinite; }
+  </style>
+</head>
+<body>
+
+  <div class="header-banner"></div>
+
+  <div class="container">
+    <div class="input-group">
+      <label>タスク名</label>
+      <input type="text" id="task-title" placeholder="やること..." required 
+             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" 
+             data-lpignore="true" data-form-type="other">
+    </div>
+
+    <div class="radio-group">
+      <label><input type="radio" name="task-type" id="type-allday" value="allday" checked> 終日</label>
+      <label><input type="radio" name="task-type" id="type-single" value="single"> 時間指定</label>
+      <label><input type="radio" name="task-type" id="type-period" value="period"> 期間</label>
+    </div>
+
+    <div class="input-group" id="allday-group">
+      <label>実施日（初期値：明日）</label>
+      <input type="date" id="allday-date" required>
+    </div>
+
+    <div class="input-group" id="start-group" style="display: none;">
+      <label id="start-label">実施日時（※1時間確保）</label>
+      <input type="datetime-local" id="start-date">
+    </div>
+
+    <div class="input-group" id="end-group" style="display: none;">
+      <label>終了日時</label>
+      <input type="datetime-local" id="end-date">
+    </div>
+
+    <div class="input-group">
+      <label>📷 写真・添付ファイル（任意）</label>
+      <input type="file" id="file-upload" accept="image/*">
+      <div id="file-status"></div>
+    </div>
+
+    <button id="submit-btn" onclick="processAndSubmit()">
+      <span class="white-fan">🪭</span> カレンダーへ登録
+    </button>
+  </div>
+
+  <script>
+    // ★ 注入済み：Google Apps Script Web App API エンドポイント
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxpw5uUgxPUsoTdHj56FOAaznOJpgpUnGft62xlZ6x_g-vhyG3NEfVvMSXCalsWjj9wTA/exec";
+
+    const typeAllday = document.getElementById('type-allday');
+    const typeSingle = document.getElementById('type-single');
+    const typePeriod = document.getElementById('type-period');
+    
+    const alldayGroup = document.getElementById('allday-group');
+    const startGroup = document.getElementById('start-group');
+    const endGroup = document.getElementById('end-group');
+    const startLabel = document.getElementById('start-label');
+
+    typeAllday.addEventListener('change', () => {
+      alldayGroup.style.display = 'flex';
+      startGroup.style.display = 'none';
+      endGroup.style.display = 'none';
+    });
+
+    typeSingle.addEventListener('change', () => {
+      alldayGroup.style.display = 'none';
+      startGroup.style.display = 'flex';
+      endGroup.style.display = 'none';
+      startLabel.innerText = '実施日時（※1時間確保）';
+    });
+
+    typePeriod.addEventListener('change', () => {
+      alldayGroup.style.display = 'none';
+      startGroup.style.display = 'flex';
+      endGroup.style.display = 'flex';
+      startLabel.innerText = '開始日時';
+    });
+
+    function setSmartDefaults() {
+      const now = new Date();
+      now.setDate(now.getDate() + 1);
+      
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      document.getElementById('allday-date').value = `${year}-${month}-${day}`;
+
+      const targetTime = new Date(now);
+      targetTime.setHours(8, 0, 0, 0);
+      const offset = targetTime.getTimezoneOffset() * 60000;
+      document.getElementById('start-date').value = (new Date(targetTime - offset)).toISOString().slice(0, 16);
+    }
+
+    window.onload = () => { setSmartDefaults(); };
+
+    const fileInput = document.getElementById('file-upload');
+    const fileStatus = document.getElementById('file-status');
+    let compressedBase64 = null;
+    let compressedMimeType = null;
+    let compressedFileName = null;
+
+    fileInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) {
+        fileStatus.innerText = "";
+        compressedBase64 = null; return;
+      }
+      fileStatus.innerText = "⏳ 最適化中...";
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const MAX_SIDE = 1200;
+          let w = img.width, h = img.height;
+          if (w > h && w > MAX_SIDE) { 
+            h = Math.round((h * MAX_SIDE) / w); w = MAX_SIDE; 
+          } else if (h > MAX_SIDE) { 
+            w = Math.round((w * MAX_SIDE) / h); h = MAX_SIDE; 
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          compressedBase64 = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+          compressedMimeType = "image/jpeg";
+          compressedFileName = "photo_" + new Date().getTime() + ".jpg";
+          fileStatus.innerText = `✅ セット完了 (${file.name})`;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function processAndSubmit() {
+      const taskName = document.getElementById('task-title').value;
+      const btn = document.getElementById('submit-btn');
+
+      if (!taskName) { alert("タスク名を入力してください。"); return; }
+
+      let taskType = 'allday';
+      if (typeSingle.checked) taskType = 'single';
+      if (typePeriod.checked) taskType = 'period';
+
+      const alldayDate = document.getElementById('allday-date').value;
+      const startD = document.getElementById('start-date').value;
+      const endD = document.getElementById('end-date').value;
+
+      if (taskType === 'allday' && !alldayDate) { alert("実施日を選択してください。"); return; }
+      if (taskType === 'single' && !startD) { alert("実施日時を選択してください。"); return; }
+      if (taskType === 'period' && (!startD || !endD)) { alert("開始日時と終了日時の両方を選択してください。"); return; }
+
+      if (navigator.vibrate) navigator.vibrate(50);
+      
+      btn.disabled = true;
+      btn.classList.add("sending");
+      btn.innerText = "転送中...";
+
+      const payload = {
+        taskName: taskName,
+        taskType: taskType,
+        alldayDate: alldayDate,
+        startDateTime: startD,
+        endDateTime: endD,
+        fileBase64: compressedBase64,
+        fileName: compressedFileName,
+        mimeType: compressedMimeType
+      };
+
+      try {
+        await fetch(GAS_WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(payload)
+        });
+
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        btn.classList.remove("sending");
+        btn.innerText = "✅ 登録完了！";
+        
+        setTimeout(() => {
+          document.getElementById('task-title').value = "";
+          fileInput.value = "";
+          fileStatus.innerText = "";
+          compressedBase64 = null;
+          setSmartDefaults();
+          
+          btn.disabled = false;
+          btn.innerHTML = '<span class="white-fan">🪭</span> カレンダーへ登録';
+        }, 1500);
+
+      } catch (err) {
+        alert("通信エラーが発生しました: " + err.message);
+        btn.classList.remove("sending");
+        btn.disabled = false;
+        btn.innerHTML = '<span class="white-fan">🪭</span> カレンダーへ登録';
+      }
+    }
+  </script>
+</body>
+</html>
